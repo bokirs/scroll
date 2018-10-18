@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8"/>
+		<meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no" />
+		<title>滚动</title>
+		<link rel="stylesheet" type="text/css" href="css/style.css"/>
+	</head>
+	<body>
+		<div id="wrap">
+			<div id="content">
+				<section class="index1" data-index="1">
+					<div>第一屏</div>									
+				</section>
+				<section class="index2" data-index="2">
+					<div>第二屏</div>
+				</section>
+				<section class="index3" data-index="3">
+					<div>第三屏</div>
+				</section>
+				<section class="index4" data-index="4">
+					<div>第四屏</div>
+				</section>
+			</div>
+		</div>
+		<script type="text/javascript">
+(function(){
+	var section = document.getElementById("content");
+	var sections = document.getElementById("content").getElementsByTagName('section');
+	var index = 0,startTime,endTime = 0;
+	var pos = {
+		start:{
+			x:0,
+			y:0
+		},
+		end:{
+			x:0,
+			y:0
+		},
+		flag:undefined
+	}
+//--------------------------鼠标滚轮---------------------------------------	
+	//判断鼠标滚轮滚动方向
+	if (window.addEventListener)//FF,火狐浏览器会识别该方法
+	    window.addEventListener('DOMMouseScroll', wheel, false);
+	window.onmousewheel = document.onmousewheel = wheel;//W3C
+	//统一处理滚轮滚动事件
+	function wheel(event){
+	    var delta = 0;
+	    startTime = +new Date;
+	    if (!event) event = window.event;
+	    if (event.wheelDelta) {//IE、chrome浏览器使用的是wheelDelta，并且值为“正负120”
+	        delta = event.wheelDelta/120; 
+	        if (window.opera) delta = -delta;//因为IE、chrome等向下滚动是负值，FF是正值，为了处理一致性，在此取反处理
+	    } else if (event.detail) {//FF浏览器使用的是detail,其值为“正负3”
+	        delta = -event.detail/3;	        
+	    }
+	    if ( delta && (startTime - endTime) > 600 ){
+	    	handle(delta);
+	    	endTime = +new Date;
+	    }else{
+	    	return false;
+	    }
+	}
+//---------------------------鼠标拖拽-----------------------------------------	
+	section.addEventListener('mousedown',function( event ){		
+		var event = event || window.event;
+		pos.start.x = event.clientX;
+		pos.start.y = event.clientY;
+		pos.flag = true; 
+		console.log( pos );
+	},false);
+	
+	section.addEventListener('mousemove',function( event ){
+		var event = event || window.event;
+		if ( pos.flag ) {
+			pos.end.x = event.clientX;
+			pos.end.y = event.clientY;			
+		} else {
+			return;
+		}
+	},false);
+	
+	section.addEventListener('mouseup',function(){
+		section.onmousemove = null;
+		pos.flag = false;
+		cha = pos.end.y - pos.start.y;
+		if ( Math.abs(cha) > 50 ) {
+			handle(cha);
+		}		 
+		console.log( pos );
+		return;
+	},false);
+	
+//----------------移动端touch-------------------	
+	section.addEventListener('touchstart',function( event ){		
+		var event = event || window.event;
+		pos.start.x = event.targetTouches[0].pageX;
+		pos.start.y = event.targetTouches[0].pageY;
+		pos.flag = true; 
+	},false);
+	
+	section.addEventListener('touchmove',function( event ){
+		var event = event || window.event;
+		event.preventDefault(); 
+		if ( pos.flag ) {
+			pos.end.x = event.targetTouches[0].pageX;
+			pos.end.y = event.targetTouches[0].pageY;
+			var deviation = pos.end.y - pos.start.y;			
+			if ( deviation < 0 && index === 3 ) { //上滑
+				deviation = Math.floor( -Math.pow(-deviation,0.82) );
+				section.style.webkitTransition = section.style.MozTransition = section.style.transition = 'none';
+				section.style.WebkitTransform =
+				section.style.MozTransform =
+				section.style.transform ='translateY('+ deviation +'px)';
+			} else if( deviation > 0 && index === 0 ){//下滑
+				deviation = Math.floor( Math.pow(deviation,0.82) );
+				section.style.webkitTransition = section.style.MozTransition = section.style.transition = 'none';
+				section.style.WebkitTransform =
+				section.style.MozTransform =
+				section.style.transform ='translateY('+ deviation +'px)';				
+			}
+		} else {
+			return;
+		}
+	},false);
+	
+	section.addEventListener('touchend',function(){
+		startTime = +new Date;
+		sections[index].style.WebkitTransform = sections[index].style.MozTransform = sections[index].style.transform =  'translateY(0)';
+		section.style.webkitTransition = section.style.MozTransition = section.style.transition = 'all 0.4s cubic-bezier(0.39, 0.58, 0.57, 1)';
+		section.style.WebkitTransform = section.style.MozTransform = section.style.transform = 'translateY(0)';
+		section.ontouchmove = null;
+		pos.flag = false;
+		cha = pos.end.y - pos.start.y;
+		if ( Math.abs(cha) > 50 && (startTime - endTime) > 600  ) {
+			handle(cha);
+			endTime = +new Date;
+		} else {
+			return;
+		}
+		return;
+	},false); 
+	
+//-------------------统一处理函数----------------------------
+	function handle(delta) {
+        if (delta <0){//向下滚动
+        	if ( index < sections.length-1 ) {
+        		index += 1;
+        	}else{
+        		return false;
+        	}
+            sections[index-1].style.top = -100 + '%';            
+        }else{//向上滚动
+        	if ( index > 0) {
+        		index -= 1;
+        	} else{
+        		return false;
+        	}
+            sections[index].style.top = 0;
+        }
+    }
+})();
+		</script>
+	</body>
+</html>
